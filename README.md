@@ -21,7 +21,7 @@ https://towardsdatascience.com/recommendation-system-matrix-factorization-d61978
 
 	// 6: num of User
 	// 4: num of Movie
-    // rating 1-5 (0 - unknown)
+	// rating 1-5 (0 - unknown)
 	rating := mat.NewDense(6, 4, []float64{
 		5, 3, 0, 1,
 		4, 0, 0, 1,
