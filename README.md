@@ -8,6 +8,7 @@ https://towardsdatascience.com/recommendation-system-matrix-factorization-d61978
 
 ## Usage
 
+```
 // MatrixFact - Simplified Collaborative Filtering using Matrix Factorization
 // rating: rating matrix, row - user, col - item
 // usrF: |U| * fCnt (User features matrix)
@@ -18,7 +19,7 @@ https://towardsdatascience.com/recommendation-system-matrix-factorization-d61978
 // beta: regularization parameter, 0.02
 // return user features matrix and item features matrix (transposed)
 
-```
+
 	rating := mat.NewDense(6, 4, []float64{
 		5, 3, 0, 1,
 		4, 0, 0, 1,
