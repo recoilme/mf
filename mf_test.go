@@ -1,11 +1,16 @@
 package mf_test
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"math/rand"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/recoilme/mf"
+	"github.com/stretchr/testify/assert"
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -77,4 +82,58 @@ func randMat(row, col int) *mat.Dense {
 		}
 	}
 	return r
+}
+
+func Test_Read(t *testing.T) {
+	data :=
+		`
+1	u1	i1	f1
+0	u1	i2	f2
+`
+	_ = data
+	sd, err := linesRead(strings.NewReader(data))
+	assert.NoError(t, err)
+	fmt.Printf("%+v\n", sd)
+}
+
+type SparseData struct {
+	User   string
+	Item   string
+	Ft     []string
+	Rating float64
+}
+
+func linesRead(r io.Reader) ([]SparseData, error) {
+	data := make([]SparseData, 0)
+	scanner := bufio.NewScanner(r)
+	for scanner.Scan() {
+		s := scanner.Text()
+		if s == "" {
+			continue
+		}
+		//fmt.Printf("'%+v'\n", t)
+		dim := strings.Split(s, "\t")
+		//scan to sd
+		sd := SparseData{}
+		ft := make([]string, 0)
+		for i, val := range dim {
+			switch i {
+			case 0:
+				rat, err := strconv.ParseFloat(val, 64)
+				if err != nil {
+					return nil, err
+				}
+				sd.Rating = rat
+			case 1:
+				sd.User = val
+			case 2:
+				sd.Item = val
+			default:
+				ft = append(ft, val)
+			}
+		}
+		sd.Ft = ft
+		data = append(data, sd)
+	}
+	return data, nil
 }
