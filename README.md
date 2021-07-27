@@ -19,7 +19,9 @@ https://towardsdatascience.com/recommendation-system-matrix-factorization-d61978
 // beta: regularization parameter, 0.02
 // return user features matrix and item features matrix (transposed)
 
-
+	// 6: num of User
+	// 4: num of Movie
+    // rating 1-5 (0 - unknown)
 	rating := mat.NewDense(6, 4, []float64{
 		5, 3, 0, 1,
 		4, 0, 0, 1,
@@ -28,13 +30,10 @@ https://towardsdatascience.com/recommendation-system-matrix-factorization-d61978
 		0, 1, 5, 4,
 		2, 1, 3, 0,
 	})
-	// 6: num of User
-	// 4: num of Movie
-    // rating 1-5 (0 - unknown)
 	// Num of Features
 	cntF := 3
 	users, items := rating.Dims()
-    // some random
+	// some random
 	userF := randMat(users, cntF)
 	itemFT := randMat(items, cntF)
 
