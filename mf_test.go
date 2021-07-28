@@ -109,19 +109,20 @@ func Test_LoadRating(t *testing.T) {
 func Test_LoadCsv(t *testing.T) {
 	data :=
 		`
-		row_id,Гарри_Поттер,Хоббит_Нежданное_путешествие,Хоббит_Пустошь_Смауга,Хроники_Нарнии_Принц_Каспиан,Сердце_дракона
-		a,1,1,1,0,0
-		b,1,1,1,0,0
-		c,1,0,0,1,0
-		d,1,0,1,0,0
-		e,1,1,0,0,1	
+		row_id,Гарри_Поттер,Хоббит_Нежданное_путешествие,Хоббит_Пустошь_Смауга,Хроники_Нарнии_Принц_Каспиан,Сердце_дракона,Аниме
+		a,1,1,1,0,0,0
+		b,1,1,1,0,0,0
+		c,1,0,0,1,0,0
+		d,1,0,1,0,0,0
+		e,1,1,0,0,1,0
+		f,0,0,0,0,0,1
 `
 	tsv := mf.RatingLoadCsv(strings.NewReader(data))
 	r := strings.NewReader(tsv)
 	rating, usrs, itms, err := mf.RatingLoad(r, 0, 1, 2)
 	assert.NoError(t, err)
-	assert.Equal(t, 5, len(usrs))
-	assert.Equal(t, 5, len(itms))
+	assert.Equal(t, 6, len(usrs))
+	assert.Equal(t, 6, len(itms))
 	_ = rating
 	//printm(rating)
 }
@@ -160,24 +161,28 @@ func Test_LoadItem(t *testing.T) {
 	assert.NoError(t, err)
 	f.Close()
 
-	f, err = os.Open("testdata/item.tsv")
+	fi, err := os.Open("testdata/item.tsv")
 	assert.NoError(t, err)
-	defer f.Close()
+	defer fi.Close()
 
-	fts, itemFT, userF := mf.ItemLoad(f, usrs, itms, rating)
+	fu, err := os.Open("testdata/user.tsv")
+	assert.NoError(t, err)
+	defer fu.Close()
+
+	fts, itemFT, userF := mf.ItemLoad(fi, fu, usrs, itms, rating)
 	//assert.NoError(t, err)
+	println("fts")
 	fmt.Println(fts)
-	printm(itemFT)
-	fmt.Println(fts)
+	println("userF")
+	fmt.Println(usrs)
 	printm(userF)
+	println("itemF")
+	fmt.Println(itms)
+	printm(itemFT)
 
 	//посчитаем
 	userF, itemF := mf.MatrixFact(rating, userF, itemFT, len(fts), 0, 0, 0)
 
-	println("userF")
-	printm(userF)
-	println("itemF")
-	printm(itemF)
 	var predictMat mat.Dense
 	println("predictMat")
 	predictMat.Mul(userF, itemF)
