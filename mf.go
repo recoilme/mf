@@ -5,7 +5,13 @@
 package mf
 
 import (
+	"bufio"
+	"errors"
+	"io"
 	"math"
+	"sort"
+	"strconv"
+	"strings"
 
 	"gonum.org/v1/gonum/mat"
 )
@@ -41,9 +47,7 @@ func MatrixFact(rating, usrF, itemFT *mat.Dense, fCnt, steps int, alpha, beta fl
 
 					for k := 0; k < fCnt; k++ {
 						// calculate gradient with alpha and beta parameter
-						//P[i][k] = P[i][k] + alpha*(2*eij*Q[k][j]-beta*P[i][k])
 						usrF.Set(i, k, usrF.At(i, k)+alpha*(2*eij*itemF.At(k, j)-beta*usrF.At(i, k)))
-						//Q[k][j] = Q[k][j] + alpha*(2*eij*P[i][k]-beta*Q[k][j])
 						itemF.Set(k, j, itemF.At(k, j)+alpha*(2*eij*usrF.At(i, k)-beta*itemF.At(k, j)))
 					}
 
@@ -70,4 +74,75 @@ func MatrixFact(rating, usrF, itemFT *mat.Dense, fCnt, steps int, alpha, beta fl
 		}
 	}
 	return usrF, itemF
+}
+
+// RatingLoad - read sparse tsv to rating matrix
+// tsv format:rating\tuser\titem\n
+// return rating matrix and ordered usrs/itms slice (for userId - User)
+func RatingLoad(r io.Reader) (rating *mat.Dense, usrs, itms []string, err error) {
+	type SparseData struct {
+		User   string
+		Item   string
+		Rating float64
+	}
+	data := make([]SparseData, 0)
+	scanner := bufio.NewScanner(r)
+
+	usrsMap := make(map[string]bool)
+	itemsMap := make(map[string]bool)
+	for scanner.Scan() {
+		s := scanner.Text()
+		if s == "" {
+			continue
+		}
+		//fmt.Printf("'%+v'\n", t)
+		dim := strings.Split(s, "\t")
+		//scan to sd
+		sd := SparseData{}
+		for i, val := range dim {
+			switch i {
+			case 0:
+				rat, err := strconv.ParseFloat(val, 64)
+				if err != nil {
+					return rating, usrs, itms, err
+				}
+				sd.Rating = rat
+			case 1:
+				if val == "" {
+					return rating, usrs, itms, errors.New("empty user in line:" + s)
+				}
+				sd.User = val
+				if !usrsMap[sd.User] {
+					usrsMap[sd.User] = true
+					usrs = append(usrs, sd.User)
+				}
+			case 2:
+				if val == "" {
+					return rating, usrs, itms, errors.New("empty item in line:" + s)
+				}
+				sd.Item = val
+				if !itemsMap[sd.Item] {
+					itemsMap[sd.Item] = true
+					itms = append(itms, sd.Item)
+				}
+			default:
+				continue
+			}
+		}
+		data = append(data, sd)
+	}
+	// convert users/items to ordered slice
+	sort.Sort(sort.StringSlice(usrs))
+	sort.Sort(sort.StringSlice(itms))
+
+	rating = mat.NewDense(len(usrs), len(itms), nil)
+	for _, sd := range data {
+		if usrId := sort.SearchStrings(usrs, sd.User); usrId < len(usrs) {
+			if itmId := sort.SearchStrings(itms, sd.Item); itmId < len(itms) {
+				rating.Set(usrId, itmId, sd.Rating)
+			}
+		}
+	}
+
+	return rating, usrs, itms, nil
 }

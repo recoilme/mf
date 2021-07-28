@@ -1,11 +1,9 @@
 package mf_test
 
 import (
-	"bufio"
 	"fmt"
-	"io"
 	"math/rand"
-	"strconv"
+	"sort"
 	"strings"
 	"testing"
 
@@ -26,7 +24,7 @@ func Test_Base(t *testing.T) {
 	// 6: num of User
 	// 4: num of Movie
 	// Num of Features
-	cntF := 3
+	cntF := 2
 	users, items := rating.Dims()
 	userF := randMat(users, cntF)
 	itemFT := randMat(items, cntF)
@@ -84,56 +82,23 @@ func randMat(row, col int) *mat.Dense {
 	return r
 }
 
-func Test_Read(t *testing.T) {
+func Test_LoadRating(t *testing.T) {
 	data :=
 		`
-1	u1	i1	f1
-0	u1	i2	f2
+1	u1	i1
+0	u1	i2
+1	u1	i3
+0	u2	i4		
 `
-	_ = data
-	sd, err := linesRead(strings.NewReader(data))
+	rating, usrs, itms, err := mf.RatingLoad(strings.NewReader(data))
 	assert.NoError(t, err)
-	fmt.Printf("%+v\n", sd)
-}
-
-type SparseData struct {
-	User   string
-	Item   string
-	Ft     []string
-	Rating float64
-}
-
-func linesRead(r io.Reader) ([]SparseData, error) {
-	data := make([]SparseData, 0)
-	scanner := bufio.NewScanner(r)
-	for scanner.Scan() {
-		s := scanner.Text()
-		if s == "" {
-			continue
-		}
-		//fmt.Printf("'%+v'\n", t)
-		dim := strings.Split(s, "\t")
-		//scan to sd
-		sd := SparseData{}
-		ft := make([]string, 0)
-		for i, val := range dim {
-			switch i {
-			case 0:
-				rat, err := strconv.ParseFloat(val, 64)
-				if err != nil {
-					return nil, err
-				}
-				sd.Rating = rat
-			case 1:
-				sd.User = val
-			case 2:
-				sd.Item = val
-			default:
-				ft = append(ft, val)
-			}
-		}
-		sd.Ft = ft
-		data = append(data, sd)
-	}
-	return data, nil
+	assert.Equal(t, 2, len(usrs))
+	assert.Equal(t, 4, len(itms))
+	usrId := sort.SearchStrings(usrs, "u1")
+	assert.Equal(t, 0, usrId)
+	itmId := sort.SearchStrings(itms, "i3")
+	//fmt.Println(itms)
+	assert.Equal(t, 2, itmId)
+	rat := rating.At(usrId, itmId)
+	assert.Equal(t, float64(1), rat)
 }
