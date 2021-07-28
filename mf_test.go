@@ -3,6 +3,7 @@ package mf_test
 import (
 	"fmt"
 	"math/rand"
+	"os"
 	"sort"
 	"strings"
 	"testing"
@@ -90,7 +91,9 @@ func Test_LoadRating(t *testing.T) {
 1	u1	i3
 0	u2	i4		
 `
-	rating, usrs, itms, err := mf.RatingLoad(strings.NewReader(data))
+	r := strings.NewReader(data)
+	rating, usrs, itms, err := mf.RatingLoad(r, 0, 1, 2)
+
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(usrs))
 	assert.Equal(t, 4, len(itms))
@@ -101,4 +104,82 @@ func Test_LoadRating(t *testing.T) {
 	assert.Equal(t, 2, itmId)
 	rat := rating.At(usrId, itmId)
 	assert.Equal(t, float64(1), rat)
+}
+
+func Test_LoadCsv(t *testing.T) {
+	data :=
+		`
+		row_id,Гарри_Поттер,Хоббит_Нежданное_путешествие,Хоббит_Пустошь_Смауга,Хроники_Нарнии_Принц_Каспиан,Сердце_дракона
+		a,1,1,1,0,0
+		b,1,1,1,0,0
+		c,1,0,0,1,0
+		d,1,0,1,0,0
+		e,1,1,0,0,1	
+`
+	tsv := mf.RatingLoadCsv(strings.NewReader(data))
+	r := strings.NewReader(tsv)
+	rating, usrs, itms, err := mf.RatingLoad(r, 0, 1, 2)
+	assert.NoError(t, err)
+	assert.Equal(t, 5, len(usrs))
+	assert.Equal(t, 5, len(itms))
+	_ = rating
+	//printm(rating)
+}
+
+func Test_LoadTsv(t *testing.T) {
+	f, err := os.Open("testdata/rating.tsv")
+	assert.NoError(t, err)
+	defer f.Close()
+
+	rating, usrs, itms, err := mf.RatingLoad(f, 0, 1, 2)
+	assert.NoError(t, err)
+	_ = usrs
+	_ = itms
+	cntF := 4
+	users, items := rating.Dims()
+	userF := randMat(users, cntF)
+	itemFT := randMat(items, cntF)
+	//посмотрим что предиктнет гарри поттеру, стерев часть оценок
+	rating.Set(0, 0, 0)
+	rating.Set(1, 0, 0)
+	rating.Set(3, 0, 0)
+	userF, itemF := mf.MatrixFact(rating, userF, itemFT, cntF, 0, 0, 0)
+
+	var predictMat mat.Dense
+	println("predictMat")
+	fmt.Println(itms)
+	predictMat.Mul(userF, itemF)
+	printm(&predictMat)
+	//printm(rating)
+}
+
+func Test_LoadItem(t *testing.T) {
+	f, err := os.Open("testdata/rating.tsv")
+	assert.NoError(t, err)
+	rating, usrs, itms, err := mf.RatingLoad(f, 0, 1, 2)
+	assert.NoError(t, err)
+	f.Close()
+
+	f, err = os.Open("testdata/item.tsv")
+	assert.NoError(t, err)
+	defer f.Close()
+
+	fts, itemFT, userF := mf.ItemLoad(f, usrs, itms, rating)
+	//assert.NoError(t, err)
+	fmt.Println(fts)
+	printm(itemFT)
+	fmt.Println(fts)
+	printm(userF)
+
+	//посчитаем
+	userF, itemF := mf.MatrixFact(rating, userF, itemFT, len(fts), 0, 0, 0)
+
+	println("userF")
+	printm(userF)
+	println("itemF")
+	printm(itemF)
+	var predictMat mat.Dense
+	println("predictMat")
+	predictMat.Mul(userF, itemF)
+	printm(&predictMat)
 }
