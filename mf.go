@@ -49,8 +49,12 @@ func MatrixFact(rating, usrF, itemFT *mat.Dense, fCnt, steps int, alpha, beta fl
 
 					for k := 0; k < fCnt; k++ {
 						// calculate gradient with alpha and beta parameter
-						usrF.Set(i, k, usrF.At(i, k)+alpha*(2*eij*itemF.At(k, j)-beta*usrF.At(i, k)))
-						itemF.Set(k, j, itemF.At(k, j)+alpha*(2*eij*usrF.At(i, k)-beta*itemF.At(k, j)))
+						if usrF.At(i, k) != 1.0 {
+							usrF.Set(i, k, usrF.At(i, k)+alpha*(2*eij*itemF.At(k, j)-beta*usrF.At(i, k)))
+						}
+						if itemF.At(k, j) != 1.0 {
+							itemF.Set(k, j, itemF.At(k, j)+alpha*(2*eij*usrF.At(i, k)-beta*itemF.At(k, j)))
+						}
 					}
 
 				}
@@ -286,40 +290,41 @@ func ItemLoad(ir, ur io.Reader, usrs, itms []string, rating *mat.Dense) ([]strin
 			}
 		}
 	}
-
-	//здесь бежим по матрице рейтинга
-	for i := 0; i < len(usrs); i++ {
-		for j := 0; j < len(itms); j++ {
-			//пройдемся по фичам и найдем есть ли она у итема
-			for ftId, val := range fts {
-				// items
-				if ft, ok := itemsFtMap[j]; ok && ft == val {
-					//у этого итема есть фича ft, индекс фичи:
-					//if ftId := sort.SearchStrings(fts, ft); ftId < len(fts) {
-					// запишем рейтинг в матрицу фичей юзера
-					userF.Set(i, ftId, rating.At(i, j))
-					//}
-				}
-				// users
-				if ft, ok := usrsFtMap[i]; ok && ft == val {
-					//у этого юзера есть фича ft, индекс фичи:
-					//if ftId := sort.SearchStrings(fts, ft); ftId < len(fts) {
-					// запишем рейтинг в матрицу фичей итема
-					itemFT.Set(j, ftId, rating.At(i, j))
-					//}
-				}
-			}
-			//пройдемся по фичам и найдем есть ли она у юзера
-			for _, val := range fts {
-				if ft, ok := usrsFtMap[i]; ok && ft == val {
-					//у этого юзера есть фича ft, индекс фичи:
-					if ftId := sort.SearchStrings(fts, ft); ftId < len(fts) {
+	/*
+		//здесь бежим по матрице рейтинга
+		for i := 0; i < len(usrs); i++ {
+			for j := 0; j < len(itms); j++ {
+				//пройдемся по фичам и найдем есть ли она у итема
+				for ftId, val := range fts {
+					// items
+					if ft, ok := itemsFtMap[j]; ok && ft == val {
+						//у этого итема есть фича ft, индекс фичи:
+						//if ftId := sort.SearchStrings(fts, ft); ftId < len(fts) {
+						// запишем рейтинг в матрицу фичей юзера
+						userF.Set(i, ftId, rating.At(i, j))
+						//}
+					}
+					// users
+					if ft, ok := usrsFtMap[i]; ok && ft == val {
+						//у этого юзера есть фича ft, индекс фичи:
+						//if ftId := sort.SearchStrings(fts, ft); ftId < len(fts) {
 						// запишем рейтинг в матрицу фичей итема
 						itemFT.Set(j, ftId, rating.At(i, j))
+						//}
+					}
+				}
+				//пройдемся по фичам и найдем есть ли она у юзера
+				for _, val := range fts {
+					if ft, ok := usrsFtMap[i]; ok && ft == val {
+						//у этого юзера есть фича ft, индекс фичи:
+						if ftId := sort.SearchStrings(fts, ft); ftId < len(fts) {
+							// запишем рейтинг в матрицу фичей итема
+							itemFT.Set(j, ftId, rating.At(i, j))
+						}
 					}
 				}
 			}
 		}
-	}
+	*/
 	return fts, itemFT, userF
 }

@@ -170,7 +170,6 @@ func Test_LoadItem(t *testing.T) {
 	defer fu.Close()
 
 	fts, itemFT, userF := mf.ItemLoad(fi, fu, usrs, itms, rating)
-	//assert.NoError(t, err)
 	println("fts")
 	fmt.Println(fts)
 	println("userF")
@@ -182,6 +181,15 @@ func Test_LoadItem(t *testing.T) {
 
 	//посчитаем
 	userF, itemF := mf.MatrixFact(rating, userF, itemFT, len(fts), 0, 0, 0)
+
+	println("userF after GD")
+	fmt.Println(usrs)
+	printm(userF)
+
+	println("itemF after GD")
+	fmt.Println(itms)
+	itemFOrig := mat.DenseCopyOf(itemF.T()) //transpose item features
+	printm(itemFOrig)
 
 	var predictMat mat.Dense
 	println("predictMat")
